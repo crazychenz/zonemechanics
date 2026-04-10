@@ -1,0 +1,18 @@
+{
+    "KPackageStructure": "KWin/Script",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Email": "vinnie@vinnie.work",
+                "Name": "Vinnie"
+            }
+        ],
+        "Description": "Places WezTerm into the correct KZone depending on docked/mobile state",
+        "Id": "winmech",
+        "License": "MIT",
+        "Name": "Window Mechanism",
+        "Version": "1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-API": "javascript"
+}
