@@ -1,0 +1,230 @@
+[
+    {
+        "name": "Quadrant Grid",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 50,
+                "width": 50
+            },
+            {
+                "x": 0,
+                "y": 50,
+                "height": 50,
+                "width": 50
+            },
+            {
+                "x": 50,
+                "y": 50,
+                "height": 50,
+                "width": 50
+            },
+            {
+                "x": 50,
+                "y": 0,
+                "height": 50,
+                "width": 50
+            },
+            {
+                "x": 25,
+                "y": 0,
+                "height": 50,
+                "width": 50
+            },
+            {
+                "x": 25,
+                "y": 50,
+                "height": 50,
+                "width": 50
+            }
+        ]
+    },
+    {
+        "name": "Half and Half",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 100,
+                "width": 50
+            },
+            {
+                "x": 50,
+                "y": 0,
+                "height": 100,
+                "width": 50
+            }
+        ]
+    },
+    {
+        "name": "Six Grid",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 50,
+                "width": 33
+            },
+            {
+                "x": 0,
+                "y": 50,
+                "height": 50,
+                "width": 33
+            },
+            {
+                "x": 33,
+                "y": 0,
+                "height": 50,
+                "width": 34
+            },
+            {
+                "x": 33,
+                "y": 50,
+                "height": 50,
+                "width": 34
+            },
+            {
+                "x": 67,
+                "y": 0,
+                "height": 50,
+                "width": 33
+            },
+            {
+                "x": 67,
+                "y": 50,
+                "height": 50,
+                "width": 33
+            }
+        ]
+    },
+    {
+        "name": "Two Thirds",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 100,
+                "width": 67
+            },
+            {
+                "x": 33,
+                "y": 0,
+                "height": 100,
+                "width": 67
+            }
+        ]
+    },
+    {
+        "name": "Columns",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 100,
+                "width": 33
+            },
+            {
+                "x": 33,
+                "y": 0,
+                "height": 100,
+                "width": 34
+            },
+            {
+                "x": 67,
+                "y": 0,
+                "height": 100,
+                "width": 33
+            }
+        ]
+    },
+    {
+        "name": "Quarter Columns",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 100,
+                "width": 25
+            },
+            {
+                "x": 25,
+                "y": 0,
+                "height": 100,
+                "width": 25
+            },
+            {
+                "x": 50,
+                "y": 0,
+                "height": 100,
+                "width": 25
+            },
+            {
+                "x": 75,
+                "y": 0,
+                "height": 100,
+                "width": 25
+            }
+        ]
+    },
+    {
+        "name": "Eighths",
+        "padding": 8,
+        "zones": [
+            {
+                "x": 0,
+                "y": 0,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 0,
+                "y": 50,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 25,
+                "y": 0,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 25,
+                "y": 50,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 50,
+                "y": 0,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 50,
+                "y": 50,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 75,
+                "y": 0,
+                "height": 50,
+                "width": 25
+            },
+            {
+                "x": 75,
+                "y": 50,
+                "height": 50,
+                "width": 25
+            }
+        ]
+    }
+]
