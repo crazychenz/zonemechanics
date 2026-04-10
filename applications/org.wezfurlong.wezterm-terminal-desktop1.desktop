@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=WezTerm
+Comment=Wez's Terminal Emulator
+Keywords=shell;prompt;command;commandline;cmd;
+Icon=org.wezfurlong.wezterm
+StartupWMClass=org.wezfurlong.wezterm
+Exec=/usr/bin/flatpak run --branch=stable --arch=x86_64 --command=wezterm org.wezfurlong.wezterm start --class org.wezfurlong.wezterm-terminal-desktop1 --cwd .
+Type=Application
+Categories=System;TerminalEmulator;Utility;
+Terminal=false
+X-Flatpak=org.wezfurlong.wezterm
