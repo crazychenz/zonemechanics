@@ -4,46 +4,56 @@
 const EXTERNAL = "DP-4";
 const LAPTOP = "eDP-2";
 
-// Get window position and sizes with:
-//   qdbus6 org.kde.KWin /KWin org.kde.KWin.queryWindowInfo
-const WINDOW_CFGS = {
-  //wezterm-ide-desktop1 - consider a terminal based IDE
-  "com.vscodium.codium-ide-desktop1and2": {
-    "docked": { screen: EXTERNAL, x: 2568, y: 8, width: 2559, height: 2100, vdesktops: [0, 1] },
-    "mobile": { screen: LAPTOP,   x: 8, y: 8, width: 1702,  height: 1540, vdesktops: [0, 1] },
+const TRANSITIONS = [
+  { // IDE
+    "docked": { screen: EXTERNAL, vdesktops: [0, 1], x: 2568, y: 8, width: 2559, height: 2100, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [0, 1], x: 8,    y: 8, width: 1702, height: 1540, }, //GOOD
   },
-  "org.wezfurlong.wezterm-terminal-desktop1": {
-    "docked": { screen: EXTERNAL, x: 5135, y: 8, width: 1257, height: 2100, vdesktops: [0] },
-    "mobile": { screen: LAPTOP,   x: 1718, y: 8, width: 834,  height: 1540, vdesktops: [0] },
+  { // Dev Terminal
+    "docked": { screen: EXTERNAL, vdesktops: [0], x: 4484, y: 8, width: 950, height: 2100, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [0], x: 1718, y: 8, width: 834, height: 1540, }, //GOOD
   },
-  "app.zen_browser.zen-browser-desktop2": {
-    "docked": { screen: EXTERNAL, x: 5135, y: 8, width: 1257, height: 2100, vdesktops: [1] },
-    "mobile": { screen: LAPTOP,   x: 1718, y: 8, width: 834,  height: 1540, vdesktops: [1] },
+  { // Dev Browser
+    "docked": { screen: EXTERNAL, vdesktops: [0], x: 5442, y: 8, width: 950, height: 1046, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [1], x: 1718, y: 8, width: 834, height: 1540, }, //GOOD
   },
-  /*
-  "zen-browser-desktop3": {
-    "docked": { x: 3833, y: 8, width: 1295, height: 2100 },
-    "mobile": { x: 1718, y: 8, width: 834,  height: 1540 },
+  { // Research Browser
+    "docked": { screen: EXTERNAL, vdesktops: [2], x: 3526, y: 8, width: 1908, height: 2100, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [2], x: 1718, y: 8, width: 834,  height: 1540, },
   },
-  "wezterm-terminal-desktop3": {
-    "docked": { x: 3833, y: 8, width: 1295, height: 2100 },
-    "mobile": { x: 1718, y: 8, width: 834,  height: 1540 },
+  { // Research Terminal
+    "docked": { screen: EXTERNAL, vdesktops: [2], x: 2568, y: 8, width: 950, height: 2100, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [2], x: 1718, y: 8, width: 834, height: 1540, },
   },
-  "zen-media-desktop4": {
-    "docked": { x: 3833, y: 8, width: 1295, height: 2100 },
-    "mobile": { x: 1718, y: 8, width: 834,  height: 1540 },
+  { // Spotify
+    "docked": { screen: EXTERNAL, vdesktops: [3], x: 2568, y: 8, width: 950, height: 1046, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834, height: 1540, },
   },
-  "spotify-media-desktop4": {
-    "docked": { x: 3833, y: 8, width: 1295, height: 2100 },
-    "mobile": { x: 1718, y: 8, width: 834,  height: 1540 },
+  { // Chat Browser
+    "docked": { screen: EXTERNAL, vdesktops: [3], x: 2568, y: 1062, width: 950, height: 1046, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834,  height: 1540, },
   },
-  "zen-chat-desktop4": {
-    "docked": { x: 3833, y: 8, width: 1295, height: 2100 },
-    "mobile": { x: 1718, y: 8, width: 834,  height: 1540 },
+  { // Media Browser
+    "docked": { screen: EXTERNAL, vdesktops: [3], x: 3526, y: 8, width: 1908, height: 2100, }, //GOOD
+    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834,  height: 1540, },
   },
-  */
-};
+];
 
+/*
+
+  PLAN:
+
+  - Cache the environment mode (docked or mobile) when the script starts.
+
+  - Track all window geometry updates via `frameGeometryChanged`. When a geometry matches any 
+    of the definitions above, we cache/uncache the association with that environment mode.
+
+    - Note: We also use `windowAdded` event to get new windows.
+
+  - When screensChanged event triggers, cache the new environment mode and set the geometries
+    for all of the associated windows as defined for the specified environment mode.
+
+*/
 
 
 
@@ -51,8 +61,22 @@ const WINDOW_CFGS = {
 
 ////////////////////////////////////////////////////////////////////////
 
+/*
 
-function isExternalConnected() {
+{
+  prevMode: "docked",
+  nextMode: "mobile",
+  byGeom: {
+    _geom_summary_: [window0, window2, window3]
+  }
+}
+
+*/
+
+
+const windowGeometries = new Map();
+
+function isDocked() {
     for (var i = 0; i < workspace.screens.length; i++) {
         if (workspace.screens[i].name === EXTERNAL) {
             return true;
@@ -62,8 +86,31 @@ function isExternalConnected() {
 }
 
 
+function trackWindow(window) {
+    // Store geometry whenever it changes
+    window.frameGeometryChanged.connect(function() {
+        windowGeometries.set(window.internalId, {
+            geometry: window.frameGeometry,
+            output: window.output ? window.output.name : null
+        });
+    });
+    // Store initial geometry immediately
+    windowGeometries.set(window.internalId, {
+        geometry: window.frameGeometry,
+        output: window.output ? window.output.name : null
+    });
+}
+
+
+function getWindowById(id) {
+    return workspace.windowList().find(function(w) {
+        return w.internalId === id;
+    });
+}
+
+
 // "org.wezfurlong.wezterm"
-function findWindowByClass(class_name) {
+function findWindowByPlacement(placement) {
     var windows = workspace.windowList();
     var found = [];
     for (var i = 0; i < windows.length; i++) {
@@ -77,7 +124,7 @@ function findWindowByClass(class_name) {
 
 
 function tryWindowPlacements() {
-  var docked = isExternalConnected();
+  var docked = isDocked();
 
   for (var class_name in WINDOW_CFGS) {
     console.log("Looking for windows with class: " + class_name);
@@ -116,6 +163,19 @@ function tryWindowPlacements() {
   }
 }
 
+// Track future windows
+workspace.windowAdded.connect(trackWindow);
+
+
+workspace.windowRemoved.connect(function(window) {
+    // These are all safe to read here:
+    print("Removed:", window.caption);
+    print("Geometry:", window.frameGeometry.x, window.frameGeometry.y,
+                       window.frameGeometry.width, window.frameGeometry.height);
+    print("Was on output:", window.output ? window.output.name : "unknown");
+    print("Resource:", window.resourceName);
+});
+
 
 // React to screensChanged events.
 workspace.screensChanged.connect(function () {
@@ -123,22 +183,63 @@ workspace.screensChanged.connect(function () {
     tryWindowPlacements();
 });
 
+workspace.screensChanged.connect(function() {
+    // At this point workspace.screens reflects the NEW screen list.
+    // Use windowGeometries for pre-change positions.
+    workspace.windowList().forEach(function(window) {
+        const cached = windowGeometries.get(window.internalId);
+        if (!cached) return;
 
-// Optionally, place windows when they first opens (since they miss the screen event).
-// TODO: This is currently a mess and needs rewrite.
-/*
-workspace.windowAdded.connect(function (window) {
-  for (var class_name in WINDOW_CFGS) {
-    if (window.resourceClass && window.resourceClass.toLowerCase().indexOf("org.wezfurlong.wezterm") !== -1) {
-      console.log("[winmech] WezTerm window added — placing.");
-      tryWindowPlacements();
-    }
-  }
+        // Check if the output this window was on still exists
+        const outputStillExists = workspace.screens.some(
+            s => s.name === cached.output
+        );
+
+        if (!outputStillExists) {
+            // Reposition the window using cached geometry as a reference
+            // e.g. move to primary screen, scaled/offset as needed
+        }
+    });
 });
-*/
+
+
+workspace.windowList().forEach(trackWindow);
 
 console.log("[winmech] Script loaded. Monitoring screen changes.");
 
+
+
+
+/*
+
+var trackedWindows = new Map();
+
+function trackWindow(window) {
+    // Store initial state
+    trackedWindows.set(window.internalId, {
+        geometry: window.frameGeometry,
+        output: window.output ? window.output.name : null
+    });
+
+    // Update cache when a drag/resize finishes
+    window.moveResizedChanged.connect(function() {
+        if (!window.move && !window.resize) {
+            trackedWindows.set(window.internalId, {
+                geometry: window.frameGeometry,
+                output: window.output ? window.output.name : null
+            });
+        }
+    });
+}
+
+workspace.windowList().forEach(trackWindow);
+workspace.windowAdded.connect(trackWindow);
+
+workspace.windowRemoved.connect(function(window) {
+    trackedWindows.delete(window.internalId);
+});
+
+*/
 
 
 /*
@@ -177,3 +278,4 @@ qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.isScriptLoaded "winmech"
 ```
 
 */
+
