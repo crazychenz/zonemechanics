@@ -4,6 +4,8 @@
 const EXTERNAL = "DP-4";
 const LAPTOP = "eDP-2";
 
+// Note: With two monitors, we have 3 modes: mobile, docked-dual, docked-single (laptop lid closed).
+
 const TRANSITIONS = [
   { // IDE
     "docked": { screen: EXTERNAL, vdesktops: [0, 1], x: 2568, y: 8, width: 2559, height: 2100, }, //GOOD
@@ -163,48 +165,64 @@ function tryWindowPlacements() {
   }
 }
 
-// Track future windows
-workspace.windowAdded.connect(trackWindow);
+// // Track future windows
+// workspace.windowAdded.connect(trackWindow);
 
 
-workspace.windowRemoved.connect(function(window) {
-    // These are all safe to read here:
-    print("Removed:", window.caption);
-    print("Geometry:", window.frameGeometry.x, window.frameGeometry.y,
-                       window.frameGeometry.width, window.frameGeometry.height);
-    print("Was on output:", window.output ? window.output.name : "unknown");
-    print("Resource:", window.resourceName);
-});
+// workspace.windowRemoved.connect(function(window) {
+//     // These are all safe to read here:
+//     print("Removed:", window.caption);
+//     print("Geometry:", window.frameGeometry.x, window.frameGeometry.y,
+//                        window.frameGeometry.width, window.frameGeometry.height);
+//     print("Was on output:", window.output ? window.output.name : "unknown");
+//     print("Resource:", window.resourceName);
+// });
 
 
-// React to screensChanged events.
-workspace.screensChanged.connect(function () {
-    console.log("[winmech] screensChanged fired — attempting to reset configured windows.");
-    tryWindowPlacements();
-});
+// // React to screensChanged events.
+// workspace.screensChanged.connect(function () {
+//     console.log("[winmech] screensChanged fired — attempting to reset configured windows.");
+//     tryWindowPlacements();
+// });
 
-workspace.screensChanged.connect(function() {
-    // At this point workspace.screens reflects the NEW screen list.
-    // Use windowGeometries for pre-change positions.
-    workspace.windowList().forEach(function(window) {
-        const cached = windowGeometries.get(window.internalId);
-        if (!cached) return;
+// workspace.screensChanged.connect(function() {
+//     // At this point workspace.screens reflects the NEW screen list.
+//     // Use windowGeometries for pre-change positions.
+//     workspace.windowList().forEach(function(window) {
+//         const cached = windowGeometries.get(window.internalId);
+//         if (!cached) return;
 
-        // Check if the output this window was on still exists
-        const outputStillExists = workspace.screens.some(
-            s => s.name === cached.output
-        );
+//         // Check if the output this window was on still exists
+//         const outputStillExists = workspace.screens.some(
+//             s => s.name === cached.output
+//         );
 
-        if (!outputStillExists) {
-            // Reposition the window using cached geometry as a reference
-            // e.g. move to primary screen, scaled/offset as needed
-        }
-    });
-});
+//         if (!outputStillExists) {
+//             // Reposition the window using cached geometry as a reference
+//             // e.g. move to primary screen, scaled/offset as needed
+//         }
+//     });
+// });
 
 
-workspace.windowList().forEach(trackWindow);
+// workspace.windowList().forEach(trackWindow);
 
+function getCurrentMode() {
+
+  // TODO: Use JSON and include the offset of the screen.
+
+  // Get all screen names
+  let screen_names = workspace.screens.map(screen => screen.name);
+
+  // Sort alphabetically
+  screen_names.sort();
+
+  // Concatenate into a single string
+  return screen_names.join("+");
+
+}
+
+console.log("Current Mode: " + getCurrentMode());
 console.log("[winmech] Script loaded. Monitoring screen changes.");
 
 

@@ -7,10 +7,10 @@
                 "Name": "Vinnie"
             }
         ],
-        "Description": "Places WezTerm into the correct KZone depending on docked/mobile state",
-        "Id": "winmech",
+        "Description": "Places registered zones into the correct area depending on screen layout.",
+        "Id": "zonemechanics",
         "License": "MIT",
-        "Name": "Window Mechanism",
+        "Name": "Zone Mechanics",
         "Version": "1.0"
     },
     "X-Plasma-API-Minimum-Version": "6.0",
