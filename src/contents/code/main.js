@@ -1,263 +1,189 @@
 
 
-// Output names: `kscreen-doctor --outputs`
-const EXTERNAL = "DP-4";
-const LAPTOP = "eDP-2";
-
 // Note: With two monitors, we have 3 modes: mobile, docked-dual, docked-single (laptop lid closed).
+// Note: Each distinct entry in mode arrays are a distinct screen. DOCKED_DUAL-"eDP-2" != MOBILE_ONLY-"eDP-2".
+// Note: We're layout dependent, hardware independent (i.e. no names.)
 
-const TRANSITIONS = [
+// Modes:
+const DOCKED_DUAL = '[{"w":2560,"h":1600,"x":0,"y":210},{"w":3840,"h":2160,"x":2560,"y":0}]'; //DP-4+eDP-2
+const MOBILE_ONLY = '[{"w":2560,"h":1600,"x":0,"y":0}]'; //eDP-2
+const DOCKED_SINGLE = '[{"w":3840,"h":2160,"x":2048,"y":0}]'; //DP-4 (!BUG: The x _should_ be zero.)
+
+const TRANSITION_GROUPS = [
   { // IDE
-    "docked": { screen: EXTERNAL, vdesktops: [0, 1], x: 2568, y: 8, width: 2559, height: 2100, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [0, 1], x: 8,    y: 8, width: 1702, height: 1540, }, //GOOD
+    DOCKED_DUAL: `{"c":${DOCKED_DUAL},"d":[0,1],"h":2100,"w":2559,"x":2568,"y":8}`, //GOOD
+    MOBILE_ONLY: `{"c":${MOBILE_ONLY}:"d":[0,1],"h":1540,"w":1702,"x":8,"y":8}`,
   },
   { // Dev Terminal
-    "docked": { screen: EXTERNAL, vdesktops: [0], x: 4484, y: 8, width: 950, height: 2100, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [0], x: 1718, y: 8, width: 834, height: 1540, }, //GOOD
+    DOCKED_DUAL: `{"c":${DOCKED_DUAL},"d":[0],"h":2100,"w":950,"x":4484,"y":8}`, //GOOD
+    MOBILE_ONLY: `{"c":${MOBILE_ONLY},"d":[0],"h":1540,"w":834,"x":1718,"y":8}`, //GOOD
   },
   { // Dev Browser
-    "docked": { screen: EXTERNAL, vdesktops: [0], x: 5442, y: 8, width: 950, height: 1046, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [1], x: 1718, y: 8, width: 834, height: 1540, }, //GOOD
+    DOCKED_DUAL: `{"c":${DOCKED_DUAL},"d":[0],"h":1046,"w":950,"x":5442,"y":8}`, //GOOD
+    MOBILE_ONLY: `{"c":${MOBILE_ONLY},"d":[1],"h":1540,"w":834,"x":1718,"y":8}`, //GOOD
   },
-  { // Research Browser
-    "docked": { screen: EXTERNAL, vdesktops: [2], x: 3526, y: 8, width: 1908, height: 2100, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [2], x: 1718, y: 8, width: 834,  height: 1540, },
-  },
-  { // Research Terminal
-    "docked": { screen: EXTERNAL, vdesktops: [2], x: 2568, y: 8, width: 950, height: 2100, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [2], x: 1718, y: 8, width: 834, height: 1540, },
-  },
-  { // Spotify
-    "docked": { screen: EXTERNAL, vdesktops: [3], x: 2568, y: 8, width: 950, height: 1046, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834, height: 1540, },
-  },
-  { // Chat Browser
-    "docked": { screen: EXTERNAL, vdesktops: [3], x: 2568, y: 1062, width: 950, height: 1046, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834,  height: 1540, },
-  },
-  { // Media Browser
-    "docked": { screen: EXTERNAL, vdesktops: [3], x: 3526, y: 8, width: 1908, height: 2100, }, //GOOD
-    "mobile": { screen: LAPTOP,   vdesktops: [3], x: 1718, y: 8, width: 834,  height: 1540, },
-  },
+  // { // Research Browser
+  //   DOCKED_DUAL: { vdesktops: [2], width: 1908, height: 2100, x: 3526, y: 8,  }, //GOOD
+  //   MOBILE_ONLY: { vdesktops: [2], width: 834,  height: 1540, x: 1718, y: 8,  },
+  // },
+  // { // Research Terminal
+  //   DOCKED_DUAL: { vdesktops: [2], width: 950, height: 2100, x: 2568, y: 8,  }, //GOOD
+  //   MOBILE_ONLY: { vdesktops: [2], width: 834, height: 1540, x: 1718, y: 8,  },
+  // },
+  // { // Spotify
+  //   DOCKED_DUAL: { vdesktops: [3], width: 950, height: 1046, x: 2568, y: 8,  }, //GOOD
+  //   MOBILE_ONLY: { vdesktops: [3], width: 834, height: 1540, x: 1718, y: 8,  },
+  // },
+  // { // Chat Browser
+  //   DOCKED_DUAL: { vdesktops: [3], width: 950, height: 1046, x: 2568, y: 1062,  }, //GOOD
+  //   MOBILE_ONLY: { vdesktops: [3], width: 834,  height: 1540, x: 1718, y: 8,  },
+  // },
+  // { // Media Browser
+  //   DOCKED_DUAL: { vdesktops: [3], width: 1908, height: 2100, x: 3526, y: 8, }, //GOOD
+  //   MOBILE_ONLY: { vdesktops: [3], width: 834,  height: 1540, x: 1718, y: 8,  },
+  // },
 ];
 
-/*
 
-  PLAN:
-
-  - Cache the environment mode (docked or mobile) when the script starts.
-
-  - Track all window geometry updates via `frameGeometryChanged`. When a geometry matches any 
-    of the definitions above, we cache/uncache the association with that environment mode.
-
-    - Note: We also use `windowAdded` event to get new windows.
-
-  - When screensChanged event triggers, cache the new environment mode and set the geometries
-    for all of the associated windows as defined for the specified environment mode.
-
-*/
+// TODO: Create a flat object of flat keys that each map to the transition group. (Reverse Group Lookup)
+// TODO: When a window is tracked, resized, or moved:
+// TODO:   - Re-calculate the flat_key.
+// TODO: When there is a screenChange, for each window:
+// TODO:   - If the window's flat_key is in "transition group reverse lookup" keys
+// TODO:     - Use GROUP[CURRENT_MODE] to get the desired window attrs. Parse and apply.
 
 
+// Cache the flat_key of all windows.
+const WINDOW_CACHE = new Map();
 
+// All of the windows currently mapped to each active group member.
+const TRANSITION_RLUT = {};
 
-
-////////////////////////////////////////////////////////////////////////
-
-/*
-
-{
-  prevMode: "docked",
-  nextMode: "mobile",
-  byGeom: {
-    _geom_summary_: [window0, window2, window3]
-  }
-}
-
-*/
-
-
-const windowGeometries = new Map();
-
-function isDocked() {
-    for (var i = 0; i < workspace.screens.length; i++) {
-        if (workspace.screens[i].name === EXTERNAL) {
-            return true;
-        }
-    }
-    return false;
-}
-
-
-function trackWindow(window) {
-    // Store geometry whenever it changes
-    window.frameGeometryChanged.connect(function() {
-        windowGeometries.set(window.internalId, {
-            geometry: window.frameGeometry,
-            output: window.output ? window.output.name : null
-        });
-    });
-    // Store initial geometry immediately
-    windowGeometries.set(window.internalId, {
-        geometry: window.frameGeometry,
-        output: window.output ? window.output.name : null
-    });
-}
-
-
-function getWindowById(id) {
-    return workspace.windowList().find(function(w) {
-        return w.internalId === id;
-    });
-}
-
-
-// "org.wezfurlong.wezterm"
-function findWindowByPlacement(placement) {
-    var windows = workspace.windowList();
-    var found = [];
-    for (var i = 0; i < windows.length; i++) {
-        var w = windows[i];
-        if (w.resourceClass && w.resourceClass.toLowerCase().indexOf(class_name) !== -1) {
-            found.push(w);
-        }
-    }
-    return found;
-}
-
-
-function tryWindowPlacements() {
-  var docked = isDocked();
-
-  for (var class_name in WINDOW_CFGS) {
-    console.log("Looking for windows with class: " + class_name);
-
-    var cfg = docked ? WINDOW_CFGS[class_name].docked : WINDOW_CFGS[class_name].mobile;
-
-    // Note: I don't think we need the screen because the stable arrangement accounts for it atm.
-    //var tgt_screen = tgt_config.screen;
-
-    var tgt_windows = findWindowByClass(class_name);
-    if (tgt_windows.length === 0) {
-      console.log("[winmech] No " + class_name + " windows found.");
-      continue;
-    }
-
-    for (var i = 0; i < tgt_windows.length; i++) {
-
-      var tgt = tgt_windows[i];
-
-      // To be maximized is not the way.
-      if (tgt.maximized) tgt.setMaximize(false, false);
-
-      // Set the position and size of tgt window.
-      tgt.frameGeometry = { "x": cfg.x, "y": cfg.y, "width": cfg.width, "height": cfg.height };
-
-      // Set the window's associated virtual desktops
-      var tgt_desktops = [];
-      for (var idx in cfg.vdesktops) {
-        tgt_desktops.push(workspace.desktops[idx]);
-      }
-      tgt.desktops = tgt_desktops;
-
-      console.log("[winmech] Placed " + class_name + " window using " + (docked ? "DOCKED" : "MOBILE"));
-
-    }
-  }
-}
-
-// // Track future windows
-// workspace.windowAdded.connect(trackWindow);
-
-
-// workspace.windowRemoved.connect(function(window) {
-//     // These are all safe to read here:
-//     print("Removed:", window.caption);
-//     print("Geometry:", window.frameGeometry.x, window.frameGeometry.y,
-//                        window.frameGeometry.width, window.frameGeometry.height);
-//     print("Was on output:", window.output ? window.output.name : "unknown");
-//     print("Resource:", window.resourceName);
-// });
-
-
-// // React to screensChanged events.
-// workspace.screensChanged.connect(function () {
-//     console.log("[winmech] screensChanged fired — attempting to reset configured windows.");
-//     tryWindowPlacements();
-// });
-
-// workspace.screensChanged.connect(function() {
-//     // At this point workspace.screens reflects the NEW screen list.
-//     // Use windowGeometries for pre-change positions.
-//     workspace.windowList().forEach(function(window) {
-//         const cached = windowGeometries.get(window.internalId);
-//         if (!cached) return;
-
-//         // Check if the output this window was on still exists
-//         const outputStillExists = workspace.screens.some(
-//             s => s.name === cached.output
-//         );
-
-//         if (!outputStillExists) {
-//             // Reposition the window using cached geometry as a reference
-//             // e.g. move to primary screen, scaled/offset as needed
-//         }
-//     });
-// });
-
-
-// workspace.windowList().forEach(trackWindow);
-
-function getCurrentMode() {
-
-  // TODO: Use JSON and include the offset of the screen.
-
-  // Get all screen names
-  let screen_names = workspace.screens.map(screen => screen.name);
-
-  // Sort alphabetically
-  screen_names.sort();
-
-  // Concatenate into a single string
-  return screen_names.join("+");
-
-}
-
-console.log("Current Mode: " + getCurrentMode());
-console.log("[winmech] Script loaded. Monitoring screen changes.");
-
-
-
-
-/*
-
-var trackedWindows = new Map();
-
-function trackWindow(window) {
-    // Store initial state
-    trackedWindows.set(window.internalId, {
-        geometry: window.frameGeometry,
-        output: window.output ? window.output.name : null
-    });
-
-    // Update cache when a drag/resize finishes
-    window.moveResizedChanged.connect(function() {
-        if (!window.move && !window.resize) {
-            trackedWindows.set(window.internalId, {
-                geometry: window.frameGeometry,
-                output: window.output ? window.output.name : null
-            });
-        }
-    });
-}
-
-workspace.windowList().forEach(trackWindow);
-workspace.windowAdded.connect(trackWindow);
-
-workspace.windowRemoved.connect(function(window) {
-    trackedWindows.delete(window.internalId);
+// Desktop index lookup by ID.
+const DESKTOP_IDX_BY_ID = new Map();
+// TODO: Need a way to track changes here?
+// TODO: TEST: Does this work across activities?
+workspace.desktops.forEach(function(desktop, idx) {
+  console.log(`[zonemech] DESKTOP_IDX_BY_ID key ${desktop.id} value ${idx}`);
+  DESKTOP_IDX_BY_ID.set(desktop.id, idx);
 });
 
-*/
+
+function getCurrentMode() {
+  let parts = workspace.screens.map(screen => {
+    let g = screen.geometry;
+
+    return '{"w":'+g.width+',"h":'+g.height+',"x":'+g.x+',"y":'+g.y+'}';
+  });
+
+  parts.sort();
+
+  return '['+parts.join(",")+']';
+}
+var CURRENT_MODE = getCurrentMode();
+
+
+function getFlatKey(window) {
+  // '{"d":[0,1],"h":1540,"w":1702,"x":8,"y":8}'
+
+  var g = window.frameGeometry;
+  var gJson = '"h":' + g.height + ',"w":' + g.width + ',"x":' + g.x + ',"y":' + g.y;
+
+  
+  var indicies = window.desktops.map(desktop => DESKTOP_IDX_BY_ID.get(desktop.id))
+  indicies.sort();
+  gJson = '"d":[' + indicies.join(",") + '],' + gJson;
+  
+  return '{"c":'+CURRENT_MODE+',' + gJson + '}';
+}
+
+
+function trackWindow(window) {
+
+    // Store initial state
+    WINDOW_CACHE.set(window.internalId, {
+        window: window,
+        flat_key: getFlatKey(window),
+    });
+    //console.log(`[zonemech] Initial, window ${window.internalId} to flat_key ${getFlatKey(window)}.`);
+
+    // Update cache when a drag/resize finishes (in contrast to 
+    // frameGeometryChanged that happens while dragging.)
+    window.moveResizedChanged.connect(function() {
+        if (window.move || window.resize) {
+          WINDOW_CACHE.set(window.internalId, {
+              window: window,
+              flat_key: getFlatKey(window),
+          });
+          //console.log(`[zonemech] Position/Size, window ${window.internalId} to flat_key ${getFlatKey(window)}.`);
+        }
+
+        //console.log("[zonemech] Updating geometry cache for windowInternalId: " + window.internalId);
+    });
+
+    // Track window desktop updates.
+    window.desktopsChanged.connect(() => {
+        WINDOW_CACHE.set(window.internalId, {
+            window: window,
+            flat_key: getFlatKey(window),
+        });
+        //console.log(`[zonemech] Desktop, window ${window.internalId} to flat_key ${getFlatKey(window)}.`);
+    });
+
+    //console.log("[zonemech] Added window to cache with internalId: " + window.internalId);
+}
+
+
+function untrackWindow(window) {
+    // TODO: Delete all the window memberships.
+    WINDOW_CACHE.delete(window.internalId);
+    //console.log("[zonemech] Removed window to cache with internalId: " + window.internalId);
+}
+
+
+// React to screensChanged events.
+workspace.screensChanged.connect(function () {
+    CURRENT_MODE = getCurrentMode()
+    //console.log(`[zonemech] New Current Mode: ${CURRENT_MODE}`);
+    WINDOW_CACHE.forEach(function(value, key) {
+      //console.log(`[zonemech] Checking ${value.flat_key}`);
+      if (value.flat_key in TRANSITION_RLUT) {
+        //console.log(`[zonemech] XXXXX ${value.window.caption} found in TRANSITION_RLUT, doing transition to: ${value.flat_key}`)
+        group = TRANSITION_RLUT[value.flat_key];
+        obj = JSON.parse(group[CURRENT_MODE]);
+        var window = value.window;
+
+        window.frameGeometry = { "x": obj.x, "y": obj.y, "width": obj.w, "height": obj.h };
+        window.desktops = obj.d.map(idx => workspace.desktops[idx]);
+      }
+
+    });
+});
+
+
+// Track all window geometries
+workspace.windowAdded.connect(trackWindow);
+workspace.windowRemoved.connect(untrackWindow);
+workspace.windowList().forEach(trackWindow);
+
+
+// Build TRANSITION_GROUPS reverse lookup
+TRANSITION_GROUPS.forEach(function(group) {
+  Object.keys(group).forEach(function(mode) {
+    TRANSITION_RLUT[group[mode]] = group;
+    //console.log(`[zonemech] Adding flat_key ${group[mode]} to RLUT.`);
+  });
+});
+
+
+//console.log(`[zonemech] Desktops: ${workspace.desktops.map(desktop => desktop.id)}`);
+//console.log(`[zonemech] Current Mode: ${getCurrentMode()}`);
+console.log("[zonemech] Script loaded. Monitoring screen changes.");
+
+
+
+
+
 
 
 /*
